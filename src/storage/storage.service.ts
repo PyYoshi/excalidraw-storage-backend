@@ -1,5 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import * as Keyv from 'keyv';
+import Keyv, { KeyvStoreAdapter } from 'keyv';
+import KeyvSqlite from '@keyv/sqlite';
+import KeyvMongo from '@keyv/mongo';
+import KeyvMysql from '@keyv/mysql';
+import KeyvPostgres from '@keyv/postgres';
+import KeyvRedis from '@keyv/redis';
 
 @Injectable()
 export class StorageService {
@@ -14,9 +19,30 @@ export class StorageService {
       );
     }
 
+    let store: KeyvStoreAdapter | Map<any, any> | any = new Map<any, any>();
+    if (uri != null) {
+      switch (uri.split('://')[0]) {
+        case 'mongodb':
+          store = new KeyvMongo(uri);
+          break;
+        case 'mysql':
+          store = new KeyvMysql(uri);
+          break;
+        case 'postgresql':
+          store = new KeyvPostgres(uri);
+          break;
+        case 'redis':
+          store = new KeyvRedis(uri);
+          break;
+        case 'sqlite':
+          store = new KeyvSqlite(uri);
+          break;
+      }
+    }
+
     Object.keys(StorageNamespace).forEach((namespace) => {
       const keyv = new Keyv({
-        uri,
+        store,
         namespace,
       });
       keyv.on('error', (err) =>
