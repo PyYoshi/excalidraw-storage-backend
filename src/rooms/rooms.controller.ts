@@ -10,21 +10,22 @@ import {
   Res,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { StorageNamespace, StorageService } from 'src/storage/storage.service';
+import { StorageNamespace, StorageService } from '../storage/storage.service';
 import { Readable } from 'stream';
 
 @Controller('rooms')
 export class RoomsController {
   private readonly logger = new Logger(RoomsController.name);
+
   namespace = StorageNamespace.ROOMS;
 
   constructor(private storageService: StorageService) {}
 
   @Get(':id')
   @Header('content-type', 'application/octet-stream')
-  async findOne(@Param() params, @Res() res: Response): Promise<void> {
-    const data = await this.storageService.get(params.id, this.namespace);
-    this.logger.debug(`Get room ${params.id}`);
+  async findOne(@Param('id') id: string, @Res() res: Response): Promise<void> {
+    const data = await this.storageService.get(id, this.namespace);
+    this.logger.debug(`Get room ${id}`);
 
     if (!data) {
       throw new NotFoundException();
@@ -37,8 +38,7 @@ export class RoomsController {
   }
 
   @Put(':id')
-  async create(@Param() params, @Body() payload: Buffer) {
-    const id = params.id;
+  async create(@Param('id') id: string, @Body() payload: Buffer) {
     await this.storageService.set(id, payload, this.namespace);
     this.logger.debug(`Created room ${id}`);
 

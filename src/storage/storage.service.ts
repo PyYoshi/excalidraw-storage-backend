@@ -25,13 +25,20 @@ export class StorageService {
       this.storagesMap.set(namespace, keyv);
     });
   }
+
   get(key: string, namespace: StorageNamespace): Promise<Buffer> {
     return this.storagesMap.get(namespace).get(key);
   }
+
   async has(key: string, namespace: StorageNamespace): Promise<boolean> {
     return !!(await this.storagesMap.get(namespace).get(key));
   }
-  set(key: string, value: Buffer, namespace: StorageNamespace): Promise<true> {
+
+  set(
+    key: string,
+    value: Buffer,
+    namespace: StorageNamespace,
+  ): Promise<boolean> {
     return this.storagesMap.get(namespace).set(key, value);
   }
 }

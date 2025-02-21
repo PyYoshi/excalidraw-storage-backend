@@ -12,6 +12,6 @@ import { FilesController } from './files/files.controller';
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(RawParserMiddleware).forRoutes('**');
+    consumer.apply(RawParserMiddleware).forRoutes('{*splat}');
   }
 }
