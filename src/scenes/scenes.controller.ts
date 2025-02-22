@@ -13,7 +13,10 @@ import {
 import { Response } from 'express';
 import { StorageNamespace, StorageService } from '../storage/storage.service';
 import { Readable } from 'stream';
-import { customAlphabet } from 'nanoid';
+import { importEsmPackage } from '../import-esm-package';
+
+// const nanoid =
+// import { customAlphabet } from 'nanoid';
 
 @Controller('scenes')
 export class ScenesController {
@@ -41,6 +44,9 @@ export class ScenesController {
 
   @Post()
   async create(@Body() payload: Buffer) {
+    const { customAlphabet } =
+      await importEsmPackage<typeof import('nanoid')>('nanoid');
+
     // Excalidraw front-end only support numeric id, we can't use nanoid default alphabet
     const nanoid = customAlphabet('0123456789', 16);
     const id = nanoid();
