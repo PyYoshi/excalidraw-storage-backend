@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { FilesController } from './files.controller';
+
 import { StorageNamespace, StorageService } from '../storage/storage.service';
+import { FilesController } from './files.controller';
 
 describe('FilesController', () => {
   let controller: FilesController;
@@ -33,7 +34,13 @@ describe('FilesController', () => {
 
   it('should call storageService.set', async () => {
     const setSpy = jest.spyOn(storageService, 'set').mockResolvedValue(true);
-    const result = await controller.create('test', Buffer.from('test'));
+
+    const dummyReq = {
+      raw: {},
+    };
+    dummyReq.raw['rawBody'] = Buffer.from('test');
+
+    const result = await controller.create('test', dummyReq as never);
     expect(setSpy).toHaveBeenCalledWith(
       'test',
       Buffer.from('test'),

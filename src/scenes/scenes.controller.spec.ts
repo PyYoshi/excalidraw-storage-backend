@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ScenesController } from './scenes.controller';
+
 import { StorageService } from '../storage/storage.service';
+import { ScenesController } from './scenes.controller';
 
 describe('ScenesController', () => {
   let controller: ScenesController;

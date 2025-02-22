@@ -1,5 +1,5 @@
 import {
-  Body,
+  BadRequestException,
   Controller,
   Get,
   Header,
@@ -8,15 +8,14 @@ import {
   NotFoundException,
   Param,
   Post,
+  Req,
   Res,
 } from '@nestjs/common';
-import { Response } from 'express';
-import { StorageNamespace, StorageService } from '../storage/storage.service';
+import { FastifyReply, FastifyRequest } from 'fastify';
 import { Readable } from 'stream';
-import { importEsmPackage } from '../import-esm-package';
 
-// const nanoid =
-// import { customAlphabet } from 'nanoid';
+import { importEsmPackage } from '../import-esm-package';
+import { StorageNamespace, StorageService } from '../storage/storage.service';
 
 @Controller('scenes')
 export class ScenesController {
@@ -28,7 +27,10 @@ export class ScenesController {
 
   @Get(':id')
   @Header('content-type', 'application/octet-stream')
-  async findOne(@Param('id') id: string, @Res() res: Response): Promise<void> {
+  async findOne(
+    @Param('id') id: string,
+    @Res() res: FastifyReply,
+  ): Promise<void> {
     const data = await this.storageService.get(id, this.namespace);
     this.logger.debug(`Get scene ${id}`);
 
@@ -39,11 +41,19 @@ export class ScenesController {
     const stream = new Readable();
     stream.push(data);
     stream.push(null);
-    stream.pipe(res);
+    stream.pipe(res.raw);
   }
 
   @Post()
-  async create(@Body() payload: Buffer) {
+  async create(@Req() req: FastifyRequest) {
+    if (!('rawBody' in req.raw)) {
+      throw new BadRequestException('Missing body');
+    }
+
+    if (!Buffer.isBuffer(req.raw['rawBody'])) {
+      throw new BadRequestException('Invalid body');
+    }
+
     const { customAlphabet } =
       await importEsmPackage<typeof import('nanoid')>('nanoid');
 
@@ -56,7 +66,7 @@ export class ScenesController {
       throw new InternalServerErrorException();
     }
 
-    await this.storageService.set(id, payload, this.namespace);
+    await this.storageService.set(id, req.raw['rawBody'], this.namespace);
     this.logger.debug(`Created scene ${id}`);
 
     return {

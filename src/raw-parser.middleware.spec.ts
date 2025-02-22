@@ -1,7 +1,7 @@
-import { RawParserMiddleware } from './raw-parser.middleware';
+import { FastifyRawParserMiddleware } from './raw-parser.middleware';
 
-describe('RawParserMiddleware', () => {
+describe('FastifyRawParserMiddleware', () => {
   it('should be defined', () => {
-    expect(new RawParserMiddleware()).toBeDefined();
+    expect(new FastifyRawParserMiddleware()).toBeDefined();
   });
 });

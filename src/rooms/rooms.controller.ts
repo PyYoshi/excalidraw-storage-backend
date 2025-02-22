@@ -1,5 +1,5 @@
 import {
-  Body,
+  BadRequestException,
   Controller,
   Get,
   Header,
@@ -7,11 +7,13 @@ import {
   NotFoundException,
   Param,
   Put,
+  Req,
   Res,
 } from '@nestjs/common';
-import { Response } from 'express';
-import { StorageNamespace, StorageService } from '../storage/storage.service';
+import { FastifyReply, FastifyRequest } from 'fastify';
 import { Readable } from 'stream';
+
+import { StorageNamespace, StorageService } from '../storage/storage.service';
 
 @Controller('rooms')
 export class RoomsController {
@@ -23,7 +25,10 @@ export class RoomsController {
 
   @Get(':id')
   @Header('content-type', 'application/octet-stream')
-  async findOne(@Param('id') id: string, @Res() res: Response): Promise<void> {
+  async findOne(
+    @Param('id') id: string,
+    @Res() res: FastifyReply,
+  ): Promise<void> {
     const data = await this.storageService.get(id, this.namespace);
     this.logger.debug(`Get room ${id}`);
 
@@ -34,12 +39,21 @@ export class RoomsController {
     const stream = new Readable();
     stream.push(data);
     stream.push(null);
-    stream.pipe(res);
+    stream.pipe(res.raw);
   }
 
   @Put(':id')
-  async create(@Param('id') id: string, @Body() payload: Buffer) {
-    await this.storageService.set(id, payload, this.namespace);
+  async create(@Param('id') id: string, @Req() req: FastifyRequest) {
+    if (!('rawBody' in req.raw)) {
+      throw new BadRequestException('Missing body');
+    }
+
+    // req.raw['rawBody'] is a Buffer
+    if (!Buffer.isBuffer(req.raw['rawBody'])) {
+      throw new BadRequestException('Invalid body');
+    }
+
+    await this.storageService.set(id, req.raw['rawBody'], this.namespace);
     this.logger.debug(`Created room ${id}`);
 
     return {
