@@ -4,6 +4,8 @@ import * as parseFileSizeString from 'filesize-parser';
 import * as getRawBody from 'raw-body';
 import { hasBody } from 'type-is';
 
+// Excalidraw のフロントエンドは Content-Type ヘッダーを送信してこないので､ NestJSの rawBody が機能しない
+// そのため､ Middleware で Request の raw に rawBody として Buffer を格納する
 @Injectable()
 export class FastifyRawParserMiddleware implements NestMiddleware {
   use(req: FastifyRequest['raw'], res: FastifyReply['raw'], next: () => void) {
@@ -41,8 +43,6 @@ export class FastifyRawParserMiddleware implements NestMiddleware {
         if (isString(body)) {
           body = Buffer.from(body);
         }
-
-        console.dir(body);
 
         req['rawBody'] = body;
       },
