@@ -1,38 +1,60 @@
-import { LogLevel } from '@nestjs/common';
+import { ConsoleLogger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import {
+  TransportMultiOptions,
+  TransportPipelineOptions,
+  TransportSingleOptions,
+} from 'pino';
 
 import { AppModule } from './app.module';
 
-function isLogLevel(value: any): value is LogLevel {
-  return value in ['log', 'error', 'warn', 'debug', 'verbose'];
-}
+const isDebug = process.env.NODE_ENV !== 'production';
 
 async function bootstrap() {
-  const logLevel = isLogLevel(process.env.LOG_LEVEL)
-    ? process.env.LOG_LEVEL
-    : 'log';
+  let fastifyLoggerTransport:
+    | TransportSingleOptions
+    | TransportMultiOptions
+    | TransportPipelineOptions
+    | undefined;
+  if (isDebug) {
+    fastifyLoggerTransport = {
+      target: 'pino-pretty',
+      options: {
+        translateTime: 'HH:MM:ss Z',
+        ignore: 'pid,hostname',
+      },
+    };
+  }
 
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter(),
+    new FastifyAdapter({
+      logger: {
+        name: 'backend',
+        level: isDebug ? 'debug' : 'info',
+        transport: fastifyLoggerTransport,
+      },
+    }),
     {
       cors: true,
-      logger: [logLevel],
+      // logger: [logLevel],
+      logger: new ConsoleLogger({
+        logLevels: [isDebug ? 'debug' : 'log'],
+        json: !isDebug,
+      }),
     },
   );
 
   app.setGlobalPrefix(process.env.GLOBAL_PREFIX ?? '/api/v2');
 
   const config = new DocumentBuilder()
-    .setTitle('Cats example')
-    .setDescription('The cats API description')
+    .setTitle('excalidraw-storage-backend')
     .setVersion('1.0')
-    .addTag('cats')
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('oai', app, documentFactory);
